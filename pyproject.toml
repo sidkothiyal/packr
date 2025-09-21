@@ -1,0 +1,13 @@
+[project]
+name = "packr"
+version = "0.1.0"
+authors = [
+  { name = "Siddharth Kothiyal", email = "sid.kothiyal27@gmail.com" },
+]
+description = "A library (and hopefully a set of models) for running ML based compression models specifically for images (to start with)."
+readme = "README.md"
+requires-python = ">=3.11, <3.13"
+dependencies = []
+
+[tool.uv]
+package = true
