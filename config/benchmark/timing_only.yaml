@@ -1,0 +1,7 @@
+# Timing-Only Benchmark Configuration
+# @package benchmark
+
+# List of benchmarks to run (only timing)
+benchmarks:
+  - _target_: benchmark.time_benchmark.TimeBenchmark
+    name: "timing"

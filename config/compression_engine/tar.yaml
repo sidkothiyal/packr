@@ -1,0 +1,8 @@
+# TAR Compression Engine Configuration
+# @package compression_engine
+
+_target_: compression_engine.tar_engine.TarCompressionEngine
+
+# Engine configuration
+name: "tar"
+compression_mode: "w:gz"  # w, w:, w:gz, w:bz2, w:xz

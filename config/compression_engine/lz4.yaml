@@ -1,0 +1,8 @@
+# LZ4 Compression Engine Configuration
+# @package compression_engine
+
+_target_: compression_engine.lz4_engine.LZ4CompressionEngine
+
+# Engine configuration
+name: "lz4"
+compression_level: 0  # 0 = default, 1-12 for higher compression

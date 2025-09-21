@@ -1,0 +1,24 @@
+# Main configuration file for compression benchmarking
+defaults:
+  - compression_engine: lz4
+  - benchmark: default
+  - _self_
+
+# Global settings
+data:
+  input_dir: "data/DIV2K_valid_HR"
+  output_dir: "results"
+  max_images: 10  # Set to null for all images
+
+# Runtime settings
+runtime:
+  save_compressed_images: false
+  save_decoded_images: false
+  verbose: true
+
+# Hydra settings
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: false

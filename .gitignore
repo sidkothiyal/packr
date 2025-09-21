@@ -1,0 +1,10 @@
+data/*
+results/*
+outputs/*
+**/__pycache__/*
+
+# package
+**/*egg-info/*
+
+# UV
+uv.lock

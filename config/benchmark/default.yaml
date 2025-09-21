@@ -1,0 +1,10 @@
+# Default Benchmark Configuration
+# @package benchmark
+
+# List of benchmarks to run
+benchmarks:
+  - _target_: benchmark.time_benchmark.TimeBenchmark
+    name: "timing"
+    
+  - _target_: benchmark.reproducibility_benchmark.ReproducibilityBenchmark
+    name: "similarity"
