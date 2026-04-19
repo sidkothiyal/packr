@@ -1,0 +1,21 @@
+---
+description: Rules for benchmarks
+globs: ["src/benchmark/**", "config/benchmark/**", "tests/benchmark/**"]
+alwaysApply: false
+---
+
+# Benchmark Rules
+
+## Adding a Benchmark
+1. Subclass `Benchmark` in `src/benchmark/my_benchmark.py`.
+2. Implement `__call__(original_image, decoded_image, compressed_data, encoding_time, decoding_time) -> dict` and call `self._add_result(metrics)` to accumulate per-image results column-wise.
+3. Implement `summarize() -> dict` that reduces `self._results` to stats. Always handle the empty-results case.
+4. Register in one or more `config/benchmark/*.yaml` benchmark lists (`_target_: benchmark.my_benchmark.MyBenchmark`).
+5. Add tests mirroring `tests/benchmark/`.
+6. Update `src/benchmark/README.md` and `src/benchmark/ARCHITECTURE.md`.
+
+## Engine Injection
+If your benchmark needs the active compression engine (e.g. to re-encode images), set `self.compression_engine = None` in `__init__`. The runner calls `Benchmarks.bind_engine(engine)` which fills in any benchmark exposing that attribute as `None`. Do not take the engine as a constructor argument — it would force the Hydra config to reference the engine twice.
+
+## Image Handling
+Use `self._image_to_array(x)` (which wraps `utils.image.ensure_array`) to normalize any input to HWC uint8 RGB. Use `self._get_image_size` / `self._calculate_pixels` for shape/pixel counts.

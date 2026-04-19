@@ -1,0 +1,42 @@
+---
+description: Core rules for packr — always applied
+alwaysApply: true
+---
+
+# packr — Core Rules
+
+Modular image compression benchmarking library. Classical codecs (LZ4, TAR, JPEG) and ML codecs (ONNX autoencoders from `elemental`) behind a shared `Encoder`/`Decoder` interface. Config via Hydra. Uses `uv` for Python env.
+
+## Import Convention
+`src/` is on `PYTHONPATH`. Import as `from compression_engine.base import Encoder` — never `from src.compression_engine...`.
+
+## Commands
+```bash
+uv sync --extra dev
+uv run python src/runner.py                                      # default (lz4)
+uv run python src/runner.py compression_engine=<engine>          # switch engine
+uv run python src/runner.py benchmark=<bench_group>              # switch benchmarks
+uv run pytest tests/
+```
+
+## Hydra Configs
+All configs live in `config/` (singular). Entry point: `config/config.yaml`. Sub-configs in `config/compression_engine/` and `config/benchmark/` are composed via `defaults:`. Objects are instantiated with `_target_` through `hydra.utils.instantiate`.
+
+## Encoder/Decoder Split
+Every engine is a `CompressionEngine(encoder, decoder)`. Each side is independently instantiable (for future streaming). Encoded `bytes` must be self-describing — the decoder must reconstruct without shared state.
+
+## Canonical Image Format
+Internal format: **HWC uint8 RGB numpy**. Funnel all public inputs through `utils.image.ensure_array`. Don't branch on input type elsewhere.
+
+## Benchmark Contract
+Benchmarks are stateful callables. `__call__` computes per-image metrics and appends via `self._add_result(dict)`. `summarize()` reduces `self._results` to stats. Benchmarks that need the active engine expose `compression_engine = None`; the runner injects it via `Benchmarks.bind_engine`.
+
+## Documentation
+Every `src/` subdirectory has `README.md` (usage) and `ARCHITECTURE.md` (implementation).
+**Update both for every directory you modify.** Also update outermost `README.md` if project-level docs change. Outdated docs are worse than no docs.
+
+## Planning
+If a task has more than 3 steps, create a plan first before executing.
+
+## Testing
+Tests mirror `src/` under `tests/`. ONNX tests auto-skip if `onnxruntime` or model files are missing — preserve this when adding ONNX-dependent tests. Add tests for new behavior only.

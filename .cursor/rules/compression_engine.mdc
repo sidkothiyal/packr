@@ -1,0 +1,24 @@
+---
+description: Rules for compression engines
+globs: ["src/compression_engine/**", "config/compression_engine/**", "tests/compression_engine/**"]
+alwaysApply: false
+---
+
+# Compression Engine Rules
+
+## Adding an Engine
+1. `src/compression_engine/my_engine.py` — define `MyEncoder(Encoder)` and `MyDecoder(Decoder)` from `compression_engine.base`.
+2. `config/compression_engine/my_engine.yaml` — `_target_: compression_engine.base.CompressionEngine` with nested `encoder` and `decoder` sub-configs using `_target_`.
+3. Add tests under `tests/compression_engine/test_my_engine.py` mirroring the existing layout.
+4. Update `src/compression_engine/README.md` and `src/compression_engine/ARCHITECTURE.md`.
+
+## Contracts
+- `Encoder.encode(image: HWC uint8 RGB np.ndarray) -> (bytes, encoding_time_s)`
+- `Decoder.decode(data: bytes) -> (HWC uint8 RGB np.ndarray, decoding_time_s)`
+- Bytes must be **self-describing** — no shared in-memory state between encoder and decoder. Embed any shape/dtype/quantization metadata in a binary header (see `onnx_engine.LatentSerializer` for the pattern).
+- Time measurement uses `time.perf_counter()` spanning the full encode/decode (including (de)serialization).
+
+## ONNX-specific
+- Encoder and decoder are fully independent — a streaming consumer should be able to instantiate only one side.
+- Spatial dimensions are reflection-padded to a `size_multiple` (default 8); original (H, W) travels in the latent header so the decoder can crop back.
+- Support `device` = `auto` | `cuda` | `cpu` via `_resolve_providers`. `cuda` must raise if `CUDAExecutionProvider` is unavailable; `auto` falls back to CPU silently.
