@@ -1,0 +1,10 @@
+# JPEG Compression Engine Configuration
+# @package compression_engine
+
+_target_: compression_engine.base.CompressionEngine
+name: "jpeg"
+encoder:
+  _target_: compression_engine.jpeg_engine.JPEGEncoder
+  quality: 90
+decoder:
+  _target_: compression_engine.jpeg_engine.JPEGDecoder

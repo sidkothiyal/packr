@@ -180,6 +180,7 @@ def main(cfg: DictConfig) -> None:
 
     # Create benchmarks
     benchmarks = create_benchmarks_from_config(cfg.benchmark)
+    benchmarks.bind_engine(compression_engine)
     print(f"Running {len(benchmarks)} benchmarks: {benchmarks.names}")
 
     # Create output directory

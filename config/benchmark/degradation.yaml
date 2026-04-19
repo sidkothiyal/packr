@@ -1,0 +1,17 @@
+# Degradation Benchmark Configuration
+# @package benchmark
+
+# Runs N encode/decode cycles and measures quality vs. the original at each
+# iteration. Useful to spot cumulative loss in lossy engines.
+
+benchmarks:
+  - _target_: benchmark.time_benchmark.TimeBenchmark
+    name: "timing"
+
+  - _target_: benchmark.reproducibility_benchmark.ReproducibilityBenchmark
+    name: "similarity"
+
+  - _target_: benchmark.degradation_benchmark.DegradationBenchmark
+    name: "degradation"
+    num_cycles: 100
+    sample_iterations: null  # null = every iteration; or e.g. [1, 10, 50, 100]

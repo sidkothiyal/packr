@@ -1,0 +1,41 @@
+# ONNX Autoencoder Compression Engine Configuration.
+#
+# Loads the encoder + decoder ONNX pair exported from `elemental`'s
+# compression_ae training config (see
+# elemental/configs/experiment/autoencoder/compression_ae.yaml and
+# elemental/configs/export/compression_ae.yaml).
+#
+# Override model paths with hydra, e.g.:
+#   ++compression_engine.encoder.model_path=/path/to/encoder.onnx
+#   ++compression_engine.decoder.model_path=/path/to/decoder.onnx
+#
+# @package compression_engine
+
+_target_: compression_engine.base.CompressionEngine
+name: "compression_ae"
+
+encoder:
+  _target_: compression_engine.onnx_engine.ONNXEncoder
+  model_path: "../elemental/exports/compression_ae/compression_ae_encoder.onnx"
+  input_name: "input_image"
+  output_name: "encoded_image"
+  device: "auto"
+  mean: [0.5, 0.5, 0.5]
+  std: [0.5, 0.5, 0.5]
+  size_multiple: 8
+  latent_serializer:
+    _target_: compression_engine.onnx_engine.LatentSerializer
+    dtype: "float16"
+
+decoder:
+  _target_: compression_engine.onnx_engine.ONNXDecoder
+  model_path: "../elemental/exports/compression_ae/compression_ae_decoder.onnx"
+  input_name: "encoded_image"
+  output_name: "reconstructed_image"
+  device: "auto"
+  mean: [0.5, 0.5, 0.5]
+  std: [0.5, 0.5, 0.5]
+  size_multiple: 8
+  latent_serializer:
+    _target_: compression_engine.onnx_engine.LatentSerializer
+    dtype: "float16"

@@ -13,7 +13,16 @@ dependencies = [
   "hydra-core",
   "omegaconf",
   "lz4",
+  "onnxruntime",
 ]
+
+[project.optional-dependencies]
+gpu = ["onnxruntime-gpu"]
+dev = ["pytest", "pytest-cov"]
 
 [tool.uv]
 package = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
