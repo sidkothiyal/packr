@@ -40,3 +40,14 @@ def test_jpeg_accepts_path_input(rgb_image_tmp_path):
     data, _ = engine.encode(path)
     decoded, _ = engine.decode(data)
     assert decoded.shape == arr.shape
+
+
+def test_jpeg_rejects_batch(rgb_image_small):
+    encoder = JPEGEncoder(quality=90)
+    decoder = JPEGDecoder()
+    assert encoder.supports_batch is False
+    assert decoder.supports_batch is False
+    with pytest.raises(NotImplementedError):
+        encoder.encode_batch([rgb_image_small, rgb_image_small])
+    with pytest.raises(NotImplementedError):
+        decoder.decode_batch(b"")

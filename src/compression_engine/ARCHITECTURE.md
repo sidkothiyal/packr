@@ -14,31 +14,42 @@
 
 ```python
 class Encoder(ABC):
-    def encode(self, image: np.ndarray) -> Tuple[bytes, float]: ...   # HWC uint8 RGB -> bytes + enc_time_s
+    supports_batch: bool = False
+    def encode(self, image: np.ndarray) -> Tuple[bytes, float]: ...                    # HWC uint8 RGB -> bytes + enc_time_s
+    def encode_batch(self, images: List[np.ndarray]) -> Tuple[bytes, float]: ...       # default raises NotImplementedError
 
 class Decoder(ABC):
-    def decode(self, data: bytes) -> Tuple[np.ndarray, float]: ...    # bytes -> HWC uint8 RGB + dec_time_s
+    supports_batch: bool = False
+    def decode(self, data: bytes) -> Tuple[np.ndarray, float]: ...                     # bytes -> HWC uint8 RGB + dec_time_s
+    def decode_batch(self, data: bytes) -> Tuple[List[np.ndarray], float]: ...         # default raises NotImplementedError
 ```
 
 Both define a `name` property (defaults to class name; overridable in the constructor). Timing uses `time.perf_counter()` and spans the full (de)serialization.
+
+Subclasses that can compress multiple images jointly set `supports_batch = True` on both sides and override the batch methods. Byte-stream codecs (`LZ4`, `TAR`) do; per-image codecs (`JPEG`, `ONNX`) inherit the raising defaults.
 
 ## CompressionEngine
 
 ```python
 engine = CompressionEngine(encoder, decoder, name=None)
-engine.encode(image_like) -> (bytes, float)     # funnels input through utils.image.ensure_array
-engine.decode(bytes)      -> (np.ndarray, float)
-engine.benchmark(image_paths, benchmarks)        # orchestrates per-image encode+decode, then fans results to benchmarks
+engine.encode(image_like)  -> (bytes, float)                 # funnels input through utils.image.ensure_array
+engine.decode(bytes)       -> (np.ndarray, float)
+engine.encode_batch(images)-> (bytes, float)                 # delegates to encoder.encode_batch after ensure_array
+engine.decode_batch(bytes) -> (List[np.ndarray], float)
+engine.supports_batch                                        # True iff both encoder and decoder opt in
+engine.benchmark(image_paths, benchmarks, batch_size=1)      # per-image when batch_size==1 or engine doesn't support batch; otherwise chunked
 ```
 
-`engine.benchmark` is the single loop used by `runner.run_compression_benchmark`. It produces the five arguments that every `Benchmark` expects.
+`engine.benchmark` is the single loop used by `runner.run_compression_benchmark`. It always produces the five arguments every `Benchmark` expects. In the batched path the chunk is encoded/decoded once; then per-image `compressed_data` is reported as a bytes object of length `len(blob) // N` and `encoding_time` / `decoding_time` as `total / N`, so summary statistics remain per-image even though compression was joint.
+
+`DegradationBenchmark` is bound to `engine` directly (via `Benchmarks.bind_engine`) and continues to use single-image `encode`/`decode` in both modes — degradation is inherently a per-image cycle study.
 
 ## Self-Describing Bytes
 
 Decoders must not depend on shared in-memory state with their encoder. Each engine embeds whatever metadata it needs:
 
-- **LZ4** — pickle preserves numpy shape/dtype inside the payload.
-- **TAR** — pickle inside `image_data.pkl` entry; `compression_mode` must match on both sides (config-level constraint, not embedded).
+- **LZ4** — pickle preserves numpy shape/dtype inside the payload. Batch mode pickles a `list[np.ndarray]` before LZ4-compressing the stream.
+- **TAR** — pickle inside `image_data.pkl` entry (single-image) or `image_batch.pkl` (batched — pickled `list[np.ndarray]`); `compression_mode` must match on both sides (config-level constraint, not embedded).
 - **JPEG** — JPEG stream is fully self-describing.
 - **ONNX** — `LatentSerializer` writes a custom binary header.
 

@@ -10,6 +10,11 @@ data:
   output_dir: "results"
   max_images: 10  # Set to null for all images
 
+# Group images into batches for engines whose encoders set supports_batch=True
+# (LZ4, TAR). Engines that don't support batching (JPEG, ONNX) ignore this.
+# Use -1 to compress every image in a single batch.
+batch_size: 1
+
 # Runtime settings
 runtime:
   save_compressed_images: false

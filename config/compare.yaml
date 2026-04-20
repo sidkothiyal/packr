@@ -17,6 +17,10 @@ data:
   output_dir: "results"
   max_images: 100
 
+# Applies to batch-capable engines (LZ4, TAR) only; others ignore it.
+# Use -1 to compress every image in a single batch.
+batch_size: -1
+
 runtime:
   save_compressed_images: false
   save_decoded_images: false

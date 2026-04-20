@@ -18,6 +18,7 @@ def run_compression_benchmark(
     benchmarks: Benchmarks,
     save_compressed_images: bool = True,
     save_decoded_images: bool = True,
+    batch_size: int = 1,
 ) -> Dict[str, Any]:
     """Run comprehensive benchmarking of compression engine.
 
@@ -83,7 +84,7 @@ def run_compression_benchmark(
         f"Starting benchmark run with {len(image_paths)} images, {compression_engine.name} engine, and {len(benchmarks)} benchmarks..."
     )
 
-    compression_engine.benchmark(image_paths, benchmarks)
+    compression_engine.benchmark(image_paths, benchmarks, batch_size=batch_size)
 
     all_results["detailed_results"] = benchmarks.results
 
@@ -230,6 +231,7 @@ def main(cfg: DictConfig) -> None:
                 benchmarks=benchmarks,
                 save_compressed_images=cfg.runtime.save_compressed_images,
                 save_decoded_images=cfg.runtime.save_decoded_images,
+                batch_size=cfg.get("batch_size", 1),
             )
             per_engine_summaries[compression_engine.name] = results["benchmark_summaries"]
         except Exception as e:

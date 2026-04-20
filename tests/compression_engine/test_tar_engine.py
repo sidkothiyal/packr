@@ -24,3 +24,26 @@ def test_tar_invalid_mode():
         TarEncoder(compression_mode="w:bogus")
     with pytest.raises(ValueError):
         TarDecoder(compression_mode="w:bogus")
+
+
+def test_tar_supports_batch_flag():
+    assert TarEncoder().supports_batch is True
+    assert TarDecoder().supports_batch is True
+
+
+@pytest.mark.parametrize("mode", ["w:gz", "w:bz2", "w:xz", "w"])
+def test_tar_batch_roundtrip(mode):
+    rng = np.random.default_rng(seed=7)
+    images = [rng.integers(0, 256, size=(48, 72, 3), dtype=np.uint8) for _ in range(4)]
+    engine = CompressionEngine(
+        TarEncoder(compression_mode=mode),
+        TarDecoder(compression_mode=mode),
+        name=f"tar_{mode}",
+    )
+
+    blob, _ = engine.encode_batch(images)
+    decoded, _ = engine.decode_batch(blob)
+
+    assert len(decoded) == len(images)
+    for original, recovered in zip(images, decoded):
+        assert np.array_equal(original, recovered)

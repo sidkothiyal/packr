@@ -37,6 +37,21 @@ uv run python src/runner.py compression_engine=compression_ae \
 
 For ONNX engines, encoder and decoder must agree on `latent_serializer.dtype`, `mean`/`std`, and `size_multiple`.
 
+## Batch compression
+
+Byte-stream codecs (LZ4, TAR) gain compression ratio when multiple images are compressed jointly — the compressor sees cross-image redundancy (pickle framing, repeated pixel patterns, dictionary entries) that is invisible when each image is processed alone.
+
+Engines opt into this by setting `supports_batch = True` on both the encoder and decoder and implementing `encode_batch(images)` / `decode_batch(data)`. `LZ4` and `TAR` do; `JPEG` and `ONNX` do not (per-image DCT and per-image latents respectively have no cross-image signal).
+
+Enable globally with the top-level `batch_size` config knob:
+
+```bash
+uv run python src/runner.py compression_engine=lz4 batch_size=16
+uv run python src/runner.py --config-name=compare batch_size=16
+```
+
+Engines without batch support silently use the per-image path, so a single `batch_size` value is safe across a compare run. In batched mode `CompressionEngine.benchmark` amortizes `compressed_data` length and timing evenly across the images in each chunk so per-image benchmark metrics remain meaningful.
+
 ## Adding a New Engine
 
 See `ARCHITECTURE.md` in this directory and the root `CLAUDE.md`.

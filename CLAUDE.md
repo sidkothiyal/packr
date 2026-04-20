@@ -43,6 +43,9 @@ A `Benchmark` is a stateful callable: `__call__(original_image, decoded_image, c
 ### Multi-Engine Runs
 `config/compare.yaml` composes every engine under `compression_engines.<name>` using Hydra's `group@package` directive. The runner (`_resolve_engine_configs`) detects `cfg.compression_engines` and iterates, instantiating a **fresh** `Benchmarks` per engine (because `Benchmark._results` is stateful). After the loop it writes `summary.json` alongside the per-engine `results_{name}.json` files.
 
+### Batch Compression (LZ4 / TAR only)
+`Encoder` / `Decoder` expose an optional `supports_batch` class flag plus `encode_batch(images)` / `decode_batch(data)` methods. Byte-stream codecs (LZ4, TAR) override them to compress a pickled `list[np.ndarray]` in a single compressor run, exposing cross-image redundancy that the per-image path hides. Per-image codecs (JPEG, ONNX) inherit the raising defaults — `supports_batch` stays `False`. The top-level `batch_size` config knob is forwarded to `CompressionEngine.benchmark`, which routes to the chunked path only when the engine supports it; other engines transparently stay on the per-image loop, so a single `batch_size` value is safe across a compare run. In batched mode per-image `compressed_data` length and timing are amortized across the chunk so benchmark metrics remain per-image.
+
 ### Engine Injection for Degradation
 `DegradationBenchmark` re-encodes/decodes N times and needs a reference to the active engine. It is *not* passed in the Hydra config — the runner calls `Benchmarks.bind_engine(engine)`, which sets `compression_engine` on any benchmark that exposes it as `None`. If you add a benchmark that needs the engine, follow this same attribute-based pattern.
 

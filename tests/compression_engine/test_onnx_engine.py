@@ -55,6 +55,12 @@ def test_latent_serializer_invalid_dtype():
         LatentSerializer(dtype="bogus")
 
 
+def test_onnx_rejects_batch():
+    """ONNX engine must not silently accept batch calls — supports_batch stays False."""
+    assert ONNXEncoder.supports_batch is False
+    assert ONNXDecoder.supports_batch is False
+
+
 def test_pad_to_multiple():
     arr = np.zeros((1, 3, 7, 11), dtype=np.float32)
     padded, orig = _pad_to_multiple(arr, multiple=8)
