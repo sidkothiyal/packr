@@ -5,6 +5,7 @@
 #   ++compression_engines.compression_ae.encoder.model_path=/path/to/encoder.onnx
 #   ++compression_engines.compression_ae.decoder.model_path=/path/to/decoder.onnx
 defaults:
+  - compression_engine@compression_engines.passthrough: passthrough
   - compression_engine@compression_engines.lz4: lz4
   - compression_engine@compression_engines.tar: tar
   - compression_engine@compression_engines.jpeg: jpeg

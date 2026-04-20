@@ -20,6 +20,11 @@ Every engine is composed of an `Encoder` and a `Decoder` that exchange self-desc
 | `tar` | no | Pickle inside a TAR (gz/bz2/xz/uncompressed). Baseline. |
 | `jpeg` | yes | Always re-encodes to JPEG at configurable `quality` (default 90). |
 | `compression_ae` | yes | ONNX autoencoder (encoder + decoder pair). Loads models exported from [elemental](../elemental). Device `auto`/`cuda`/`cpu`. Latent serialization is pluggable (`float32` / `float16` / per-tensor-quantized `int8`). |
+| `webp` | yes | WebP at configurable quality. ~30% smaller than JPEG at equal quality; essential modern baseline. **Must-have.** |
+| `avif` | yes | AV1-based codec; current state-of-the-art lossy baseline the ML model must beat. **Must-have.** |
+| `png` | no | Image-aware lossless baseline (distinct from byte-level LZ4/TAR). **Must-have.** |
+| `jpeg_xl` | yes/no | JPEG successor; both lossy and lossless modes; upper bound for classical codec quality. **Good to have.** |
+| `bpg` | yes | HEVC-based; often 2× smaller than JPEG at equal PSNR; strong lossy upper bound. **Good to have.** |
 
 ### Benchmarks
 
@@ -28,6 +33,11 @@ Every engine is composed of an `Encoder` and a `Decoder` that exchange self-desc
 | `TimeBenchmark` | encoding/decoding time, throughput (pixels/s), time ratios. |
 | `ReproducibilityBenchmark` | MSE, PSNR, RMSE, MAE, global SSIM, perfect-reconstruction rate. |
 | `DegradationBenchmark` | Runs N encode/decode cycles and records PSNR/SSIM/MSE at each iteration vs. the original. Reports the full degradation curve, final metrics, and ΔPSNR. |
+| `CompressionRatioBenchmark` | Compressed bytes / original bytes. Fundamental metric for comparing engines. **Must-have.** |
+| `PerceptualBenchmark` | LPIPS — perceptual similarity metric that correlates with human judgment; essential for evaluating ML codecs where MSE/PSNR can be misleading. **Must-have.** |
+| `FrequencyBenchmark` | PSNR in the DCT/wavelet frequency domain; catches blocking and ringing artifacts that pixel-domain PSNR misses. **Must-have.** |
+| `LatencyProfileBenchmark` | Breaks timing into encode / decode / serialization phases; diagnoses where the ONNX pipeline is slow. **Good to have.** |
+| `MemoryBenchmark` | Peak RSS during encode/decode; ML models can balloon memory, important for deployment sizing. **Good to have.** |
 
 ## Running
 

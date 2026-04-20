@@ -5,6 +5,7 @@
 | File | Purpose |
 |---|---|
 | `base.py` | `Encoder` / `Decoder` ABCs and `CompressionEngine` composition. |
+| `passthrough_engine.py` | `PassthroughEncoder` / `PassthroughDecoder`. PIL PNG round-trip — lossless baseline. |
 | `lz4_engine.py` | `LZ4Encoder` / `LZ4Decoder`. Pickle → `lz4.frame`. |
 | `tar_engine.py` | `TarEncoder` / `TarDecoder`. Pickle → in-memory TAR. Validates mode against `_VALID_WRITE_MODES`. |
 | `jpeg_engine.py` | `JPEGEncoder` / `JPEGDecoder`. PIL JPEG round-trip. |

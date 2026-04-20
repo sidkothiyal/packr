@@ -6,6 +6,7 @@ Pluggable image compression backends. Every engine is a `CompressionEngine` comp
 
 | Engine | Lossy | Config | Notes |
 |---|---|---|---|
+| `PassthroughEncoder` / `PassthroughDecoder` | no | `config/compression_engine/passthrough.yaml` | Re-encodes as PNG. Lossless reference baseline — any other lossless engine should beat this. |
 | `LZ4Encoder` / `LZ4Decoder` | no | `config/compression_engine/lz4.yaml` | Pickle + LZ4 frame. Fast lossless baseline. `compression_level: 0` is default. |
 | `TarEncoder` / `TarDecoder` | no | `config/compression_engine/tar.yaml` | Pickle inside a TAR archive. `compression_mode` picks `w`, `w:gz`, `w:bz2`, or `w:xz`. |
 | `JPEGEncoder` / `JPEGDecoder` | yes | `config/compression_engine/jpeg.yaml` | Re-encodes as JPEG at configurable `quality` (default 90). |
