@@ -33,12 +33,14 @@ Every engine is composed of an `Encoder` and a `Decoder` that exchange self-desc
 
 ```bash
 uv sync --extra dev                                        # install + dev extras
-uv run python src/runner.py                                # uses default (lz4 + default benchmarks)
+uv run python src/runner.py                                # uses default (compression_ae + default benchmarks)
 uv run python src/runner.py compression_engine=jpeg        # switch engine via hydra
+uv run python src/runner.py compression_engine=lz4         # classical baseline
 uv run python src/runner.py compression_engine=compression_ae \
     ++compression_engine.encoder.model_path=/path/to/encoder.onnx \
     ++compression_engine.decoder.model_path=/path/to/decoder.onnx
 uv run python src/runner.py benchmark=degradation          # include degradation benchmark
+uv run python src/runner.py --config-name=compare          # run every engine and write a consolidated summary.json
 ```
 
 Run the tests with:

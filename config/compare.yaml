@@ -1,0 +1,29 @@
+# Compare-all config: runs every compression engine against the selected benchmarks.
+# Invoke with: uv run python src/runner.py --config-name=compare
+#
+# compression_ae requires ONNX model paths; override via:
+#   ++compression_engines.compression_ae.encoder.model_path=/path/to/encoder.onnx
+#   ++compression_engines.compression_ae.decoder.model_path=/path/to/decoder.onnx
+defaults:
+  - compression_engine@compression_engines.lz4: lz4
+  - compression_engine@compression_engines.tar: tar
+  - compression_engine@compression_engines.jpeg: jpeg
+  - compression_engine@compression_engines.compression_ae: compression_ae
+  - benchmark: default
+  - _self_
+
+data:
+  input_dir: "data/div2k/val"
+  output_dir: "results"
+  max_images: 100
+
+runtime:
+  save_compressed_images: false
+  save_decoded_images: false
+  verbose: true
+
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: false

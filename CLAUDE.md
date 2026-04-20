@@ -18,6 +18,7 @@ uv run python src/runner.py compression_engine=compression_ae \
     ++compression_engine.encoder.model_path=/path/to/encoder.onnx \
     ++compression_engine.decoder.model_path=/path/to/decoder.onnx       # ONNX autoencoder
 uv run python src/runner.py benchmark=degradation                       # include degradation curve
+uv run python src/runner.py --config-name=compare                       # run all engines, write summary.json
 uv run pytest tests/                                                     # all tests
 uv run pytest tests/compression_engine/test_jpeg_engine.py -v           # single test file
 ```
@@ -38,6 +39,9 @@ Internally, images are **HWC uint8 RGB numpy arrays**. All engines and benchmark
 
 ### Benchmark Callable Contract
 A `Benchmark` is a stateful callable: `__call__(original_image, decoded_image, compressed_data, encoding_time, decoding_time)` computes per-image metrics and appends them column-wise into `self._results` via `_add_result`. `summarize()` reduces `_results` to scalars/stats. The `Benchmarks` container fans each call out to all registered benchmarks.
+
+### Multi-Engine Runs
+`config/compare.yaml` composes every engine under `compression_engines.<name>` using Hydra's `group@package` directive. The runner (`_resolve_engine_configs`) detects `cfg.compression_engines` and iterates, instantiating a **fresh** `Benchmarks` per engine (because `Benchmark._results` is stateful). After the loop it writes `summary.json` alongside the per-engine `results_{name}.json` files.
 
 ### Engine Injection for Degradation
 `DegradationBenchmark` re-encodes/decodes N times and needs a reference to the active engine. It is *not* passed in the Hydra config — the runner calls `Benchmarks.bind_engine(engine)`, which sets `compression_engine` on any benchmark that exposes it as `None`. If you add a benchmark that needs the engine, follow this same attribute-based pattern.

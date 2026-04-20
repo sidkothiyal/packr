@@ -154,18 +154,50 @@ def create_benchmarks_from_config(benchmark_config: DictConfig) -> Benchmarks:
     return Benchmarks(benchmark_instances)
 
 
+def _resolve_engine_configs(cfg: DictConfig) -> List[DictConfig]:
+    """Return the list of engine configs to run, supporting single and multi-engine configs."""
+    if "compression_engines" in cfg and cfg.compression_engines is not None:
+        return list(cfg.compression_engines.values())
+    return [cfg.compression_engine]
+
+
+def write_comparison_summary(
+    per_engine_summaries: Dict[str, Dict[str, Any]],
+    benchmark_names: List[str],
+    destination_path: Path,
+) -> Path:
+    """Write a consolidated cross-engine summary document."""
+    summary_path = destination_path / "summary.json"
+    doc = {
+        "engines": list(per_engine_summaries.keys()),
+        "benchmarks": benchmark_names,
+        "summaries": per_engine_summaries,
+    }
+    with open(summary_path, "w", encoding="utf-8") as f:
+        json.dump(doc, f, indent=2, default=str)
+    return summary_path
+
+
+def print_comparison_table(per_engine_summaries: Dict[str, Dict[str, Any]]) -> None:
+    """Print a compact cross-engine summary to stdout."""
+    print("\n=== Cross-Engine Comparison ===")
+    for engine_name, summaries in per_engine_summaries.items():
+        print(f"\n[{engine_name}]")
+        for benchmark_name, summary in summaries.items():
+            print(f"  {benchmark_name}: {summary}")
+
+
 @hydra.main(version_base=None, config_path="../config", config_name="config")
 def main(cfg: DictConfig) -> None:
     """Main function to run compression benchmarks using Hydra configuration.
 
-    Args:
-        cfg: Hydra configuration object.
+    Supports either a single engine via `cfg.compression_engine` or multiple
+    engines via `cfg.compression_engines` (dict of name -> engine config).
     """
     print("=== Compression Benchmark Runner ===")
     print(f"Configuration:")
     print(OmegaConf.to_yaml(cfg, resolve=True))
 
-    # Get image paths
     image_paths = get_image_paths(cfg.data.input_dir, cfg.data.max_images)
 
     if not image_paths:
@@ -174,38 +206,40 @@ def main(cfg: DictConfig) -> None:
 
     print(f"Found {len(image_paths)} images to process")
 
-    # Create compression engine
-    compression_engine = instantiate(cfg.compression_engine)
-    print(f"Using compression engine: {compression_engine.name}")
-
-    # Create benchmarks
-    benchmarks = create_benchmarks_from_config(cfg.benchmark)
-    benchmarks.bind_engine(compression_engine)
-    print(f"Running {len(benchmarks)} benchmarks: {benchmarks.names}")
-
-    # Create output directory
+    engine_configs = _resolve_engine_configs(cfg)
     output_dir = Path(cfg.data.output_dir)
 
-    try:
-        # Run benchmarks
-        results = run_compression_benchmark(
-            compression_engine=compression_engine,
-            image_paths=image_paths,
-            destination_path=output_dir,
-            benchmarks=benchmarks,
-            save_compressed_images=cfg.runtime.save_compressed_images,
-            save_decoded_images=cfg.runtime.save_decoded_images,
-        )
+    per_engine_summaries: Dict[str, Dict[str, Any]] = {}
+    benchmark_names: List[str] = []
 
-        print("\n=== Benchmark Summary ===")
-        for benchmark_name, summary in results["benchmark_summaries"].items():
-            print(f"\n{benchmark_name.upper()}:")
-            print(summary)
-        print(f"\nResults saved to: {output_dir}")
+    for engine_cfg in engine_configs:
+        compression_engine = instantiate(engine_cfg)
+        print(f"\n--- Running engine: {compression_engine.name} ---")
 
-    except Exception as e:
-        print(f"Error running benchmarks: {e}")
-        raise
+        # Fresh benchmarks per engine — Benchmark._results is stateful.
+        benchmarks = create_benchmarks_from_config(cfg.benchmark)
+        benchmarks.bind_engine(compression_engine)
+        benchmark_names = benchmarks.names
+        print(f"Running {len(benchmarks)} benchmarks: {benchmark_names}")
+
+        try:
+            results = run_compression_benchmark(
+                compression_engine=compression_engine,
+                image_paths=image_paths,
+                destination_path=output_dir,
+                benchmarks=benchmarks,
+                save_compressed_images=cfg.runtime.save_compressed_images,
+                save_decoded_images=cfg.runtime.save_decoded_images,
+            )
+            per_engine_summaries[compression_engine.name] = results["benchmark_summaries"]
+        except Exception as e:
+            print(f"Error running benchmarks for {compression_engine.name}: {e}")
+            raise
+
+    summary_path = write_comparison_summary(per_engine_summaries, benchmark_names, output_dir)
+    print_comparison_table(per_engine_summaries)
+    print(f"\nConsolidated summary saved to: {summary_path}")
+    print(f"Per-engine results saved under: {output_dir}")
 
 
 if __name__ == "__main__":

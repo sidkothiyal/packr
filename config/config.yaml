@@ -1,12 +1,12 @@
 # Main configuration file for compression benchmarking
 defaults:
-  - compression_engine: lz4
+  - compression_engine: compression_ae
   - benchmark: default
   - _self_
 
 # Global settings
 data:
-  input_dir: "data/DIV2K_valid_HR"
+  input_dir: "data/div2k/val"
   output_dir: "results"
   max_images: 10  # Set to null for all images
 
